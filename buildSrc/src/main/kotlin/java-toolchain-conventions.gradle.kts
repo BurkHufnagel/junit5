@@ -1,18 +1,23 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 val javaToolchainVersion: String? by project
+val defaultLanguageVersion = JavaLanguageVersion.of(15)!!
+val javaLanguageVersion = javaToolchainVersion?.let { JavaLanguageVersion.of(it) } ?: defaultLanguageVersion
 
 project.pluginManager.withPlugin("java") {
 	val extension = the<JavaPluginExtension>()
-	val javaLanguageVersion = JavaLanguageVersion.of(javaToolchainVersion?.toInt() ?: 11)
-	extension.toolchain {
-		languageVersion.set(javaLanguageVersion)
-	}
-	val service = the<JavaToolchainService>()
-	val javaHome = service.compilerFor(extension.toolchain).get().metadata.installationPath.asFile.absolutePath
+	val javaToolchainService = the<JavaToolchainService>()
+	extension.toolchain.languageVersion.set(javaLanguageVersion)
+	val compiler = javaToolchainService.compilerFor(extension.toolchain)
 	tasks.withType<KotlinJvmCompile>().configureEach {
-		kotlinOptions {
-			jdkHome = javaHome
+		doFirst {
+			kotlinOptions.jdkHome = compiler.get().metadata.installationPath.asFile.absolutePath
 		}
+	}
+	tasks.withType<JavaCompile>().configureEach {
+		javaCompiler.set(compiler)
+	}
+	tasks.withType<JavaExec>().configureEach {
+		javaLauncher.set(javaToolchainService.launcherFor(extension.toolchain))
 	}
 }

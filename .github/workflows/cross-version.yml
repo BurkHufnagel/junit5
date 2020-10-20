@@ -12,15 +12,16 @@ on:
 env:
   ORG_GRADLE_PROJECT_junitBuildCacheUsername: ${{ secrets.BUILD_CACHE_USERNAME }}
   ORG_GRADLE_PROJECT_junitBuildCachePassword: ${{ secrets.BUILD_CACHE_PASSWORD }}
+  ORG_GRADLE_PROJECT_org.gradle.java.installations.auto-download: 'false'
 
 jobs:
   openjdk:
     strategy:
       matrix:
-        jdk: [14, 15, 16]
+        jdk: [16]
     name: "OpenJDK ${{ matrix.jdk }}"
     runs-on: ubuntu-latest
-    container: "junitteam/build:${{ matrix.jdk }}"
+    container: "ghcr.io/junit-team/build:${{ matrix.jdk }}"
     steps:
       - uses: actions/checkout@v2
       - name: Cache Gradle wrapper and dependencies
@@ -46,4 +47,4 @@ jobs:
       - name: Test
         run: |
           ./gradlew --version
-          ./gradlew --scan --no-parallel --warning-mode=all -Dplatform.tooling.support.tests.enabled=true -Porg.gradle.java.installations.fromEnv=ADDITIONAL_JDK -PjavaToolchainVersion=${{ matrix.jdk }} build "-Dscan.tag.JDK_${{ matrix.jdk }}"
+          ./gradlew --scan --no-parallel --warning-mode=all -Dplatform.tooling.support.tests.enabled=true -PjavaToolchainVersion=${{ matrix.jdk }} build "-Dscan.tag.JDK_${{ matrix.jdk }}"
